@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <style>
+        [v-cloak] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" v-cloak>
+        <h2>build</h2>
+        <textarea v-model="src" id="" cols="120" rows="20"></textarea>
+        <input type="button" value="build" @click="build">
+        <h3>STDOUT</h3>
+        <pre>{{ buildResult.STDOUT }}</pre>
+        <h3>STDERR</h3>
+        <pre>{{ buildResult.STDERR }}</pre>
+        <h2>exec</h2>
+        <textarea v-model="stdin" id="" cols="120" rows="20"></textarea>
+        <input type="button" value="exec" @click="exec">
+        <h3>STDOUT</h3>
+        <pre>{{ execResult.STDOUT }}</pre>
+        <h3>STDERR</h3>
+        <pre>{{ execResult.STDERR }}</pre>
+        <h2></h2>
+    </div>
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                src: `#include <bits/stdc++.h>
+#define debug(x) cerr << #x << " = " << (x) << " (L" << __LINE__ << ")" << endl;
+using namespace std;
+int main() {
+    string s;
+    cin >> s;
+    for(auto&& c : s) {
+        cout << 'x';
+    }
+}`,
+                buildResult: {
+                    STDOUT: '',
+                    STDERR: '',
+                    STATUS: null
+                },
+                stdin: 'sardine',
+                execResult: {
+                    STDOUT: '',
+                    STDERR: '',
+                    STATUS: null
+                },
+            },
+            methods: {
+                buildExec: async function(){
+                    await this.build();
+                    await this.exec();
+                },
+                build: function(){
+                    let body = new FormData()
+                    body.set('src', this.src)
+                    new Promise(resolve => {
+                        fetch('/build', {
+                            method: 'POST',
+                            body
+                        }).then(res => res.json())
+                        .then(json => {
+                            this.buildResult = json
+                            resolve()
+                        })
+                    })
+                },
+                exec: function(){
+                    let body = new FormData()
+                    body.set('stdin', this.stdin)
+                    new Promise(resolve => {
+                        fetch('/exec', {
+                            method: 'POST',
+                            body
+                        }).then(res => res.json())
+                        .then(json => {
+                            this.execResult = json
+                            resolve()
+                        })
+                    })
+                }
+            }
+        })
+    </script>
+</body>
+</html>
