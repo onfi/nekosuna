@@ -1,9 +1,7 @@
 require 'sinatra'
 require "json"
 require 'open3'
-
-PATH_CPP = File.expand_path('../tmp/Main.cpp', __FILE__)
-PATH_OUT = File.expand_path('../tmp/a.out', __FILE__)
+require 'securerandom'
 
 def json(stdout, stderr, status)
   {
@@ -15,19 +13,33 @@ end
 
 set :environment, :production
 get '/' do
+  @id = SecureRandom.uuid
   erb :index
 end
 
 post '/build' do
   content_type :json
-  File.open(PATH_CPP, 'w') do |f|
+  `mkdir -p #{path(params['id'])}`
+  File.open(path_cpp(params['id']), 'w') do |f|
       f.puts(params['src'])
   end
-  stdout, stderr, status = Open3.capture3("zapcc++ -std=c++14 -O2 -o #{PATH_OUT} #{PATH_CPP}")
+  stdout, stderr, status = Open3.capture3("zapcc++ -std=c++14 -O2 -o #{path_out(params['id'])} #{path_cpp(params['id'])}")
   json(stdout,stderr,status)
 end
 
 post '/exec' do
-  stdout, stderr, status = Open3.capture3(PATH_OUT, stdin_data: params['stdin'])
+  stdout, stderr, status = Open3.capture3('timeout 10 ' + path_out(params['id']), stdin_data: params['stdin'])
   json(stdout,stderr,status)
+end
+
+def path(id) 
+  File.expand_path("../tmp/#{id}/", __FILE__)
+end
+
+def path_cpp(id)
+  File.expand_path("../tmp/#{id}/Main.cpp", __FILE__)
+end
+
+def path_out(id)
+  File.expand_path("../tmp/#{id}/a.out", __FILE__)
 end

@@ -4,36 +4,102 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ace.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/theme-monokai.min.js" integrity="sha256-QjbDa92d4Q3oBUXnKXRhOrz8eONu3odsIlDHnNwg4y4=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/keybinding-sublime.min.js" integrity="sha256-VqhfCaWgaN+XFhrBj1AaJ+xmS0m3AxgezrmQT6B0h+g=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/mode-c_cpp.min.js" integrity="sha256-I5GO6mGnGNU1W/8viy4CsR98MZoZ3cq96WmrJQIWqLs=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue"></script>
     <style>
         [v-cloak] {
             display: none;
         }
+        body {
+            margin: 0;
+        }
+        #app {
+            display: grid;
+            grid-template-areas:
+                "command command"
+                "build   test";
+            grid-template-columns: 300px 1fr;
+        }
+        .command {
+            grid-area: command;
+        }
+        .build {
+            grid-area: build;
+        }
+        .test {
+            grid-area: test;
+        }
+        .test li {
+            background-color: red;
+        }
+        .test li.nothing {
+            background-color: gray;
+        }
+        .test li.ac {
+            background-color: green;
+        }
+        input[type="button"] {
+            margin: 10px;
+            display: inline-block;
+            padding: 0.5em 1em;
+            text-decoration: none;
+            background: #668ad8;
+            color: #FFF;
+            border-bottom: solid 4px #627295;
+            border-radius: 3px;
+        }
+        input[type="button"]:active {
+            transform: translateY(4px);
+            border-bottom: none;
+        }
     </style>
 </head>
 <body>
+    <div id="editor" style="height: 600px"></div>
     <div id="app" v-cloak>
-        <h2>build</h2>
-        <textarea v-model="src" id="" cols="120" rows="20"></textarea>
-        <input type="button" value="build" @click="build">
-        <h3>STDOUT</h3>
-        <pre>{{ buildResult.STDOUT }}</pre>
-        <h3>STDERR</h3>
-        <pre>{{ buildResult.STDERR }}</pre>
-        <h2>exec</h2>
-        <textarea v-model="stdin" id="" cols="120" rows="20"></textarea>
-        <input type="button" value="exec" @click="exec">
-        <h3>STDOUT</h3>
-        <pre>{{ execResult.STDOUT }}</pre>
-        <h3>STDERR</h3>
-        <pre>{{ execResult.STDERR }}</pre>
-        <h2></h2>
+        <div class="command">
+            <input type="button" value="load" @click="load">
+            <input type="button" value="build & run" @click="buildRun">
+        </div>
+        <div class="build">
+            <h4>STDOUT</h4>
+            <pre>{{ buildResult.STDOUT }}</pre>
+            <h4>STDERR</h4>
+            <pre>{{ buildResult.STDERR }}</pre>
+        </div>
+        <div class="test">
+            <h2>test</h2>
+            <ul>
+                <li v-for="(test, index) in tests" :class="{nothing : test.RESULT === null, ac : test.RESULT}">
+                    result {{ index }} : {{ test.RESULT === null ? 'not yet testing' : test.RESULT ? 'AC ' + test.TIME + 'ms' : 'WA?' + test.NUM_RESULT }}
+                </li>
+            </ul>
+            <div v-for="(test, index) in tests">
+                <h4>input {{ index }}</h4>
+                <textarea v-model="test.STDIN" id="" cols="120" rows="20"></textarea>
+                <h4>expect {{ index }}</h4>
+                <textarea v-model="test.EXPECT" id="" cols="120" rows="20"></textarea>
+                <div v-if="test.STDOUT">
+                    <h3>STDOUT {{ index }}</h3>
+                    <pre>{{ test.STDOUT }}</pre>
+                </div>
+                <div v-if="test.STDERR">
+                    <h3>STDERR {{ index }}</h3>
+                    <pre>{{ test.STDERR }}</pre>
+                </div>
+            </div>
+            <input type="button" value="add" @click="add">
+        </div>
     </div>
     <script>
-        new Vue({
-            el: '#app',
-            data: {
-                src: `#include <bits/stdc++.h>
+        var editor = ace.edit("editor")
+        editor.setKeyboardHandler("ace/keyboard/sublime")
+        editor.setTheme("ace/theme/monokai")
+        editor.session.setMode("ace/mode/c_cpp")
+        editor.setValue(`#include <bits/stdc++.h>
 #define debug(x) cerr << #x << " = " << (x) << " (L" << __LINE__ << ")" << endl;
 using namespace std;
 int main() {
@@ -42,28 +108,45 @@ int main() {
     for(auto&& c : s) {
         cout << 'x';
     }
-}`,
+}`)
+        function newTest(stdin, expect) {
+            return {
+                "STDIN" : stdin,
+                "EXPECT" : expect,
+                "STDOUT" : null,
+                "STDERR" : null,
+                "STATUS" : null,
+                "RESULT" : null,
+                "NUM_RESULT" : null,
+                "TIME" : null,
+            }
+        }
+        new Vue({
+            el: '#app',
+            data: {
+                id: '<%= @id %>',
+                tests: [newTest(null, null)],
                 buildResult: {
                     STDOUT: '',
                     STDERR: '',
                     STATUS: null
                 },
                 stdin: 'sardine',
-                execResult: {
-                    STDOUT: '',
-                    STDERR: '',
-                    STATUS: null
-                },
             },
             methods: {
                 buildExec: async function(){
                     await this.build();
                     await this.exec();
                 },
+                buildRun: async function() {
+                    await this.build()
+                    this.exec()
+                },
                 build: function(){
                     let body = new FormData()
-                    body.set('src', this.src)
-                    new Promise(resolve => {
+                    body.set('id', this.id)
+                    body.set('src', editor.getValue())
+                    return new Promise(resolve => {
                         fetch('/build', {
                             method: 'POST',
                             body
@@ -74,19 +157,41 @@ int main() {
                         })
                     })
                 },
-                exec: function(){
-                    let body = new FormData()
-                    body.set('stdin', this.stdin)
-                    new Promise(resolve => {
-                        fetch('/exec', {
-                            method: 'POST',
-                            body
-                        }).then(res => res.json())
-                        .then(json => {
-                            this.execResult = json
-                            resolve()
-                        })
-                    })
+                exec: async function(){
+                    let tests = this.tests
+                    let id = this.id
+                    for(let i = 0; i < tests.length; i++) {
+                        let test = tests[i]
+                        let body = new FormData()
+                        body.set('id', id)
+                        body.set('stdin', test.STDIN)
+                        let start = new Date()
+                        await (new Promise(resolve => {
+                            fetch('/exec', {
+                                method: 'POST',
+                                body
+                            }).then(res => res.json())
+                            .then(json => {
+                                test.STDOUT = json.STDOUT
+                                test.STDERR = json.STDERR
+                                test.STATUS = json.STATUS
+                                test.TIME = (new Date()).getTime() - start.getTime()
+                                try {
+                                    test.RESULT = test.STDOUT.trim() == test.EXPECT.trim()
+                                    test.NUM_RESULT = test.RESULT || Math.abs(new Number(test.STDOUT.trim()) - new Number(test.EXPECT.trim()))
+                                } finally {
+                                    resolve()
+                                }
+                            })
+                        }))
+                    }
+                },
+                load: function(){
+                    this.tests = 
+                        JSON.parse(prompt('load test', '[["sardine","xxxxxxx"],["xxxx","xxxx"],["gone","xxxx"]]')).map(t => newTest(t[0], t[1]))
+                },
+                add: function(){
+                    this.tests.push(newTest(null, null))
                 }
             }
         })
