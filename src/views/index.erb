@@ -43,11 +43,11 @@
                 <textarea v-model="test.STDIN" id="" cols="120" rows="20" placeholder="Input STDIN"></textarea>
                 <textarea v-model="test.EXPECT" id="" cols="120" rows="20" placeholder="Input expect STDOUT"></textarea>
                 <div v-if="test.STDOUT">
-                    <h4>STDOUT {{ index }}</h4>
+                    <h4>STDOUT</h4>
                     <pre>{{ test.STDOUT }}</pre>
                 </div>
                 <div v-if="test.STDERR">
-                    <h4>STDERR {{ index }}</h4>
+                    <h4>STDERR</h4>
                     <pre>{{ test.STDERR }}</pre>
                 </div>
             </div>
@@ -137,7 +137,7 @@ int main() {
                             let result = json.STDERR == ""
                             
                             if(result) {
-                                this.compileResult = 'succsess'
+                                this.compileResult = 'success'
                             } else {
                                 this.compileResult = 'failure'
                             }
@@ -151,33 +151,37 @@ int main() {
 
                     let backup = []
                     for(let i = 0; i < tests.length; i++) {
-                        backup.push([tests[i].STDIN, tests[i].EXPECT])
+                        if(tests[i].STDIN) {
+                            backup.push([tests[i].STDIN, tests[i].EXPECT])
+                        }
                     }
                     localStorage.setItem('test', JSON.stringify(backup))
                     for(let i = 0; i < tests.length; i++) {
                         let test = tests[i]
-                        let body = new FormData()
-                        body.set('id', id)
-                        body.set('stdin', test.STDIN)
-                        let start = new Date()
-                        await (new Promise(resolve => {
-                            fetch('/exec', {
-                                method: 'POST',
-                                body
-                            }).then(res => res.json())
-                            .then(json => {
-                                test.STDOUT = json.STDOUT
-                                test.STDERR = json.STDERR
-                                test.STATUS = json.STATUS
-                                test.TIME = (new Date()).getTime() - start.getTime()
-                                try {
-                                    test.RESULT = test.STDOUT.trim() == test.EXPECT.trim()
-                                    test.NUM_RESULT = test.RESULT || Math.abs(new Number(test.STDOUT.trim()) - new Number(test.EXPECT.trim()))
-                                } finally {
-                                    resolve()
-                                }
-                            })
-                        }))
+                        if(test.STDIN) {
+                            let body = new FormData()
+                            body.set('id', id)
+                            body.set('stdin', test.STDIN)
+                            let start = new Date()
+                            await (new Promise(resolve => {
+                                fetch('/exec', {
+                                    method: 'POST',
+                                    body
+                                }).then(res => res.json())
+                                .then(json => {
+                                    test.STDOUT = json.STDOUT
+                                    test.STDERR = json.STDERR
+                                    test.STATUS = json.STATUS
+                                    test.TIME = (new Date()).getTime() - start.getTime()
+                                    try {
+                                        test.RESULT = test.STDOUT.trim() == test.EXPECT.trim()
+                                        test.NUM_RESULT = test.RESULT || Math.abs(new Number(test.STDOUT.trim()) - new Number(test.EXPECT.trim()))
+                                    } finally {
+                                        resolve()
+                                    }
+                                })
+                            }))
+                        }
                     }
                 },
                 load: function(){

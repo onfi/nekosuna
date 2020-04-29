@@ -72,6 +72,9 @@ h4 {
 .test input {
     margin-left: 0;
 }
+.test div {
+    background-color: #40444b;
+}
 
 input[type="button"], .button {
     margin: 1em 1em 1em 3em;
