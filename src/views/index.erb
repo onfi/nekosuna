@@ -3,61 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Nekosuna</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ace.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/theme-monokai.min.js" integrity="sha256-QjbDa92d4Q3oBUXnKXRhOrz8eONu3odsIlDHnNwg4y4=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/theme-tomorrow_night_eighties.min.js" integrity="sha256-Kq3aVoDYV3fiszUucwvQabgLpYDXKs9zPu8i4N6dH4M=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/keybinding-sublime.min.js" integrity="sha256-VqhfCaWgaN+XFhrBj1AaJ+xmS0m3AxgezrmQT6B0h+g=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/mode-c_cpp.min.js" integrity="sha256-I5GO6mGnGNU1W/8viy4CsR98MZoZ3cq96WmrJQIWqLs=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue"></script>
-    <style>
-        [v-cloak] {
-            display: none;
-        }
-        body {
-            margin: 0;
-        }
-        #app {
-            display: grid;
-            grid-template-areas:
-                "command command"
-                "build   test";
-            grid-template-columns: 300px 1fr;
-        }
-        .command {
-            grid-area: command;
-        }
-        .build {
-            grid-area: build;
-        }
-        .test {
-            grid-area: test;
-        }
-        .test li {
-            background-color: red;
-        }
-        .test li.nothing {
-            background-color: gray;
-        }
-        .test li.ac {
-            background-color: green;
-        }
-        input[type="button"] {
-            margin: 10px;
-            display: inline-block;
-            padding: 0.5em 1em;
-            text-decoration: none;
-            background: #668ad8;
-            color: #FFF;
-            border-bottom: solid 4px #627295;
-            border-radius: 3px;
-        }
-        input[type="button"]:active {
-            transform: translateY(4px);
-            border-bottom: none;
-        }
-    </style>
+    <link rel="stylesheet" href="/style.css"></link>
 </head>
 <body>
+    <header>Nekosuna <span>C++ programming environment for a coding competition</span></header>
     <div id="editor" style="height: 600px"></div>
     <div id="app" v-cloak>
         <div class="command">
@@ -65,29 +20,34 @@
             <input type="button" value="build & run" @click="buildRun">
         </div>
         <div class="build">
-            <h4>STDOUT</h4>
-            <pre>{{ buildResult.STDOUT }}</pre>
-            <h4>STDERR</h4>
-            <pre>{{ buildResult.STDERR }}</pre>
+            <h2>Compile result</h2>
+            <div :class="compileResult">
+                {{ compileResult }}
+            </div>
+            <div v-if="buildResult.STDOUT">
+                <h4>STDOUT</h4>
+                <pre>{{ buildResult.STDOUT }}</pre>
+            </div>
+            <div v-if="buildResult.STDERR">
+                <h4>STDERR</h4>
+                <pre>{{ buildResult.STDERR }}</pre>
+            </div>
         </div>
-        <div class="test">
+        <div class="tests">
             <h2>test</h2>
-            <ul>
-                <li v-for="(test, index) in tests" :class="{nothing : test.RESULT === null, ac : test.RESULT}">
-                    result {{ index }} : {{ test.RESULT === null ? 'not yet testing' : test.RESULT ? 'AC ' + test.TIME + 'ms' : 'WA?' + test.NUM_RESULT }}
-                </li>
-            </ul>
-            <div v-for="(test, index) in tests">
-                <h4>input {{ index }}</h4>
-                <textarea v-model="test.STDIN" id="" cols="120" rows="20"></textarea>
-                <h4>expect {{ index }}</h4>
-                <textarea v-model="test.EXPECT" id="" cols="120" rows="20"></textarea>
+            <div v-for="(test, index) in tests" :class="{ none : test.RESULT === null, success : test.RESULT, failure : test.RESULT === false }">
+                test #{{ index }} : {{ test.RESULT === null ? 'not yet testing' : test.RESULT ? 'AC ' + test.TIME + 'ms' : 'WA' + (test.NUM_RESULT ? 'diff:' + test.NUM_RESULT : '') }}
+            </div>
+            <div v-for="(test, index) in tests" class="test">
+                <h3>test #{{ index }}</h4>
+                <textarea v-model="test.STDIN" id="" cols="120" rows="20" placeholder="Input STDIN"></textarea>
+                <textarea v-model="test.EXPECT" id="" cols="120" rows="20" placeholder="Input expect STDOUT"></textarea>
                 <div v-if="test.STDOUT">
-                    <h3>STDOUT {{ index }}</h3>
+                    <h4>STDOUT {{ index }}</h4>
                     <pre>{{ test.STDOUT }}</pre>
                 </div>
                 <div v-if="test.STDERR">
-                    <h3>STDERR {{ index }}</h3>
+                    <h4>STDERR {{ index }}</h4>
                     <pre>{{ test.STDERR }}</pre>
                 </div>
             </div>
@@ -95,11 +55,12 @@
         </div>
     </div>
     <script>
-        var editor = ace.edit("editor")
+        const AceRange = ace.require("ace/range").Range
+        let editor = ace.edit("editor")
         editor.setKeyboardHandler("ace/keyboard/sublime")
-        editor.setTheme("ace/theme/monokai")
+        editor.setTheme("ace/theme/tomorrow_night_eighties")
         editor.session.setMode("ace/mode/c_cpp")
-        editor.setValue(`#include <bits/stdc++.h>
+        editor.setValue(localStorage.getItem("src") || `#include <bits/stdc++.h>
 #define debug(x) cerr << #x << " = " << (x) << " (L" << __LINE__ << ")" << endl;
 using namespace std;
 int main() {
@@ -109,6 +70,8 @@ int main() {
         cout << 'x';
     }
 }`)
+        editor.focus()
+        editor.gotoLine(1)
         function newTest(stdin, expect) {
             return {
                 "STDIN" : stdin,
@@ -126,12 +89,14 @@ int main() {
             data: {
                 id: '<%= @id %>',
                 tests: [newTest(null, null)],
+                compiling: false,
                 buildResult: {
                     STDOUT: '',
                     STDERR: '',
                     STATUS: null
                 },
                 stdin: 'sardine',
+                compileResult: 'none'
             },
             methods: {
                 buildExec: async function(){
@@ -139,13 +104,17 @@ int main() {
                     await this.exec();
                 },
                 buildRun: async function() {
-                    await this.build()
-                    this.exec()
+                    if(await this.build()) this.exec()
                 },
                 build: function(){
+                    if(this.compiling) return
+                    this.compiling = true
+                    this.compileResult = 'processing'
+                    for(a in editor.session.getMarkers()) { editor.session.removeMarker(a) }
                     let body = new FormData()
                     body.set('id', this.id)
                     body.set('src', editor.getValue())
+                    localStorage.setItem('src', editor.getValue())
                     return new Promise(resolve => {
                         fetch('/build', {
                             method: 'POST',
@@ -153,13 +122,38 @@ int main() {
                         }).then(res => res.json())
                         .then(json => {
                             this.buildResult = json
-                            resolve()
+                            this.compiling = false
+                            let matches = json.STDERR.match(/Main.cpp:([0-9]+):[0-9]+/)
+                            if(matches) {
+                                let markers = {}
+                                for(let i = 1; i < matches.length; i++) {
+                                    markers[Number(matches[i])] = true
+                                }
+                                const n = editor.getSession().getValue().split("\n").length;
+                                for(let i = 1; i < n; i++) {
+                                    editor.session.addMarker(new AceRange(i, 1, i, 2), markers[i] ? "error" : "ok", "fullLine")
+                                }
+                            }
+                            let result = json.STDERR == ""
+                            
+                            if(result) {
+                                this.compileResult = 'succsess'
+                            } else {
+                                this.compileResult = 'failure'
+                            }
+                            resolve(result)
                         })
                     })
                 },
                 exec: async function(){
                     let tests = this.tests
                     let id = this.id
+
+                    let backup = []
+                    for(let i = 0; i < tests.length; i++) {
+                        backup.push([tests[i].STDIN, tests[i].EXPECT])
+                    }
+                    localStorage.setItem('test', JSON.stringify(backup))
                     for(let i = 0; i < tests.length; i++) {
                         let test = tests[i]
                         let body = new FormData()
@@ -188,7 +182,7 @@ int main() {
                 },
                 load: function(){
                     this.tests = 
-                        JSON.parse(prompt('load test', '[["sardine","xxxxxxx"],["xxxx","xxxx"],["gone","xxxx"]]')).map(t => newTest(t[0], t[1]))
+                        JSON.parse(prompt('load test', localStorage.getItem("test") || '[["sardine","xxxxxxx"],["xxxx","xxxx"],["gone","xxxx"]]')).map(t => newTest(t[0], t[1]))
                 },
                 add: function(){
                     this.tests.push(newTest(null, null))

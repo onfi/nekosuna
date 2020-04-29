@@ -1,0 +1,112 @@
+
+[v-cloak] {
+    display: none;
+}
+body {
+    color: #FFFFFF;
+    margin: 0;
+}
+header {
+    padding: 0.2em 1em;
+    font-size: 1.5em;
+    color: #EAD9FF;
+    background-color: #333399;
+    border-bottom: solid 5px #202225;
+}
+header > span {
+    font-size: 0.7em;
+    color: #3366FF;
+}
+pre {
+    white-space: pre-wrap;
+    padding: 0.5em;
+}
+#app {
+    display: grid;
+    grid-template-areas:
+        "command command"
+        "build   tests";
+    grid-template-columns: 5fr 8fr;
+}
+.command {
+    grid-area: command;
+    background-color: #202225;
+}
+.build {
+    grid-area: build;
+    background-color: #292b2f;
+    padding: 1em;
+}
+.build div {
+    background-color: #40444b;
+}
+h4 {
+    background-color: #222222;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: normal;
+    width: 4em;
+    padding: 0 0.5em;
+}
+.tests {
+    grid-area: tests;
+    background-color: #40444b;
+    padding: 1em;
+}
+.tests {
+    margin-left: 0;
+}
+
+.test {
+    padding: 0.2em 0em 0.2em 1em;
+    background-color: #292b2f;
+    margin-top: 0.5em;
+}
+.test h3 {
+    padding: 0;
+    margin: 0;
+}
+.test textarea {
+    width: 49%;
+}
+.test input {
+    margin-left: 0;
+}
+
+input[type="button"], .button {
+    margin: 1em 1em 1em 3em;
+    display: inline-block;
+    padding: 0.5em 1em;
+    background: #7289da;
+    color: #FFF;
+    font-size: 1.2em;
+    border: none;
+    border-radius: 3px;
+}
+input[type="button"] + input[type="button"]
+, .button + .button {
+    margin-left: 1em;
+}
+input[type="button"]:hover, .button {
+    background: #677bc4;
+}
+input[type="button"]:hover, .button {
+    background: #5b6eae;
+}
+
+div.error {
+    background-color:#CC2222;
+}
+
+div.none {
+    background-color: #808080;
+}
+div.processing {
+    background-color: #808080;
+}
+div.failure {
+    background-color: #FF0000;
+}
+div.success {
+    background-color: #FF0000;
+}

@@ -1,0 +1,6 @@
+version: '2'
+services:
+  nekokusa:
+    image: simodak/nekosuna:latest
+    ports:
+      - 8080:4567
