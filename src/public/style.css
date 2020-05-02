@@ -102,14 +102,17 @@ div.error {
 }
 
 div.none {
-    background-color: #808080;
+    background-color: #3a2d49;
 }
 div.processing {
-    background-color: #808080;
+    color: #002521;
+    background-color: #c38fff;
 }
 div.failure {
-    background-color: #FF0000;
+    color: #002521;
+    background-color: #cf6679;
 }
 div.success {
-    background-color: #FF0000;
+    color: #002521;
+    background-color: #03dac5;
 }
