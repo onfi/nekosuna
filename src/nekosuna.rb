@@ -28,8 +28,8 @@ post '/build' do
 end
 
 post '/exec' do
-  stdout, stderr, status = Open3.capture3('timeout 10 ' + path_out(params['id']), stdin_data: params['stdin'])
-  json(stdout,stderr,status)
+  stdout, stderr, status = Open3.capture3('timeout -sKILL 5 ' + path_out(params['id']), stdin_data: params['stdin'])
+  json(stdout[0..10000],stderr,status)
 end
 
 def path(id) 

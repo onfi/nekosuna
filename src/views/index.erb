@@ -50,6 +50,10 @@
                     <h4>STDERR</h4>
                     <pre>{{ test.STDERR }}</pre>
                 </div>
+                <div v-if="test.STATUS">
+                    <h4>STATUS</h4>
+                    <pre>{{ test.STATUS }}</pre>
+                </div>
             </div>
             <input type="button" value="add" @click="add">
         </div>
