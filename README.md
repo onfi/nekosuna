@@ -3,8 +3,7 @@ c++のサンドボックス環境です。
 
 # usage
 ```
-docker pull simodak/nekokusa:latest
-docker run -it -p 8080:4567 simodak/nekosuna
+docker-compose up
 ```
 
 https://localhost:8080 にアクセス！
