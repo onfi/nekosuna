@@ -131,7 +131,7 @@ int main() {
                             if(matches) {
                                 let markers = {}
                                 for(let i = 1; i < matches.length; i++) {
-                                    markers[Number(matches[i])] = true
+                                    markers[Number(matches[i]) - 1] = true
                                 }
                                 const n = editor.getSession().getValue().split("\n").length;
                                 for(let i = 1; i < n; i++) {
@@ -189,8 +189,11 @@ int main() {
                     }
                 },
                 load: function(){
-                    this.tests = 
-                        JSON.parse(prompt('load test', localStorage.getItem("test") || '[["sardine","xxxxxxx"],["xxxx","xxxx"],["gone","xxxx"]]')).map(t => newTest(t[0], t[1]))
+                    const jsonValue = prompt('load test', localStorage.getItem("test") || '[["sardine","xxxxxxx"],["xxxx","xxxx"],["gone","xxxx"]]')
+                    if(jsonValue) {
+                            this.tests = 
+                                JSON.parse(jsonValue).map(t => newTest(t[0], t[1]))
+                    }
                 },
                 add: function(){
                     this.tests.push(newTest(null, null))
