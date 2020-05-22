@@ -23,7 +23,7 @@ post '/build' do
   File.open(path_cpp(params['id']), 'w') do |f|
       f.puts(params['src'])
   end
-  stdout, stderr, status = Open3.capture3("zapcc++ -std=c++17 -O2 -o #{path_out(params['id'])} #{path_cpp(params['id'])}")
+  stdout, stderr, status = Open3.capture3("zapcc++ -std=c++17 -O2 -I/user/lib/boost/gcc/include -L/user/lib/boost/gcc/lib -o #{path_out(params['id'])} #{path_cpp(params['id'])}")
   json(stdout,stderr,status)
 end
 

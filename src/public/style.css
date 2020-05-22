@@ -100,7 +100,6 @@ input[type="button"]:hover, .button {
 div.error {
     background-color:#CC2222;
 }
-
 div.none {
     background-color: #3a2d49;
 }
@@ -115,4 +114,10 @@ div.failure {
 div.success {
     color: #002521;
     background-color: #03dac5;
+}
+.build div, .tests div{
+    padding-left: 0.5em;
+}
+.tests div + div {
+    margin-top: 2px;
 }

@@ -35,8 +35,13 @@
         </div>
         <div class="tests">
             <h2>test</h2>
-            <div v-for="(test, index) in tests" :class="{ none : test.RESULT === null, success : test.RESULT, failure : test.RESULT === false }">
-                test #{{ index }} : {{ test.RESULT === null ? 'not yet testing' : test.RESULT ? 'AC ' + test.TIME + 'ms' : 'WA' + (test.NUM_RESULT ? 'diff:' + test.NUM_RESULT : '') }}
+            <div v-for="(test, index) in tests" :class="{ none : test.RESULT === null, processing: test.RESULT == 'processing', success : test.RESULT === true, failure : test.RESULT === false || test.RESULT === 'TLE' }">
+                test #{{ index }} : 
+                    <span v-if="test.RESULT === null">Not yet</span>
+                    <span v-if="test.RESULT === 'processing'">testing</span>
+                    <span v-if="test.RESULT === true">AC {{ test.TIME }}ms</span>
+                    <span v-if="test.RESULT === false">WA {{ test.NUM_RESULT ? 'diff:' + test.NUM_RESULT : '' }}</span>
+                    <span v-if="test.RESULT === 'TLE'">TLE {{ test.TIME }}ms</span>
             </div>
             <div v-for="(test, index) in tests" class="test">
                 <h3>test #{{ index }}</h4>
@@ -114,6 +119,9 @@ int main() {
                     if(this.compiling) return
                     this.compiling = true
                     this.compileResult = 'processing'
+                    for(let i = 0; i < this.tests.length; i++) {
+                        this.tests[i].RESULT = null
+                    }
                     for(a in editor.session.getMarkers()) { editor.session.removeMarker(a) }
                     let body = new FormData()
                     body.set('id', this.id)
@@ -163,6 +171,7 @@ int main() {
                     for(let i = 0; i < tests.length; i++) {
                         let test = tests[i]
                         if(test.STDIN) {
+                            test.RESULT = 'processing'
                             let body = new FormData()
                             body.set('id', id)
                             body.set('stdin', test.STDIN)
@@ -178,8 +187,12 @@ int main() {
                                     test.STATUS = json.STATUS
                                     test.TIME = (new Date()).getTime() - start.getTime()
                                     try {
-                                        test.RESULT = test.STDOUT.trim() == test.EXPECT.trim()
-                                        test.NUM_RESULT = test.RESULT || Math.abs(new Number(test.STDOUT.trim()) - new Number(test.EXPECT.trim()))
+                                        if(test.STATUS.match(/SIGKILL/)) {
+                                            test.RESULT = 'TLE'
+                                        } else {
+                                            test.RESULT = test.STDOUT.trim() == test.EXPECT.trim()
+                                            test.NUM_RESULT = test.RESULT || Math.abs(new Number(test.STDOUT.trim()) - new Number(test.EXPECT.trim()))
+                                        }
                                     } finally {
                                         resolve()
                                     }
