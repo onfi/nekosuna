@@ -8,12 +8,16 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/theme-tomorrow_night_eighties.min.js" integrity="sha256-Kq3aVoDYV3fiszUucwvQabgLpYDXKs9zPu8i4N6dH4M=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/keybinding-sublime.min.js" integrity="sha256-VqhfCaWgaN+XFhrBj1AaJ+xmS0m3AxgezrmQT6B0h+g=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/mode-c_cpp.min.js" integrity="sha256-I5GO6mGnGNU1W/8viy4CsR98MZoZ3cq96WmrJQIWqLs=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/mode-java.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/mode-python.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/mode-ruby.min.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ext-searchbox.min.js" integrity="sha256-B8qJ2ZWQDuCxnF91y5S3cJiGE5Tu1kovxLNA22PEUkg=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ext-language_tools.min.js"></script> 
     <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
     <link rel="stylesheet" href="/style.css"></link>
 </head>
 <body>
-    <header>Nekosuna <span>C++ programming environment for a coding competition</span></header>
+    <header>Nekosuna <span><span id="mode">C++</span> programming environment for a coding competition</span></header>
     <div id="editor" style="height: 600px"></div>
     <div id="app" v-cloak>
         <div class="command">
@@ -66,10 +70,13 @@
     </div>
     <script>
         const AceRange = ace.require("ace/range").Range
+        ace.require("ace/ext/language_tools");
         let editor = ace.edit("editor")
         editor.setKeyboardHandler("ace/keyboard/sublime")
         editor.setTheme("ace/theme/tomorrow_night_eighties")
-        editor.session.setMode("ace/mode/c_cpp")
+        editor.setOptions({
+            enableBasicAutocompletion: true
+        })
         editor.setValue(localStorage.getItem("src") || `#include <atcoder/modint>
 #include <iostream>
 
@@ -91,6 +98,18 @@ int main() {
     }
     cout << sum.val() << endl;
 }`)
+        if(/import java\./.test(editor.getValue())) {
+            document.querySelector('#mode').innerText = 'Java'
+            editor.session.setMode("ace/mode/java")
+        } else if (/^import|input\(\)/.test(editor.getValue())) {
+            document.querySelector('#mode').innerText = 'python'
+            editor.session.setMode("ace/mode/python")
+        } else if (/#include/.test(editor.getValue())) {
+            editor.session.setMode("ace/mode/c_cpp")
+        } else {
+            document.querySelector('#mode').innerText = 'ruby'
+            editor.session.setMode("ace/mode/ruby")
+        }
         editor.focus()
         editor.gotoLine(1)
         function newTest(stdin, expect) {
@@ -145,7 +164,7 @@ int main() {
                         .then(json => {
                             this.buildResult = json
                             this.compiling = false
-                            let matches = json.STDERR.match(/Main.cpp:([0-9]+):[0-9]+/)
+                            let matches = json.STDERR.match(/Main.(cpp|java):([0-9]+):/)
                             if(matches) {
                                 let markers = {}
                                 for(let i = 1; i < matches.length; i++) {
