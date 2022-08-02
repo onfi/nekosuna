@@ -22,6 +22,12 @@ post '/build' do
   `rm -rf #{path(params['id'])}`
   `mkdir -p #{path(params['id'])}`
   case params['src'].split(/\r?\n/).find{|s| !s.strip.empty?}
+  when /package|java\.|system\.out/
+    File.open(path_java(params['id']), 'w') do |f|
+      f.puts(params['src'])
+    end
+    stdout, stderr, status = Open3.capture3("javac #{path_java(params['id'])}")
+    json(stdout,stderr,status)
   when /\Aimport|input\(\)/
     File.open(path_py(params['id']), 'w') do |f|
       f.puts(params['src'])
@@ -42,7 +48,10 @@ post '/build' do
 end
 
 post '/exec' do
-  if FileTest.exist?(path_py(params['id']))
+  if FileTest.exist?(path_java_class(params['id']))
+    stdout, stderr, status = Open3.capture3('timeout -sKILL 5 java -classpath ' + path(params['id'] + ' Main'), stdin_data: params['stdin'])
+    json(stdout[0..10000],stderr,status)
+  elsif FileTest.exist?(path_py(params['id']))
     stdout, stderr, status = Open3.capture3('timeout -sKILL 5 python3 ' + path_py(params['id']), stdin_data: params['stdin'])
     json(stdout[0..10000],stderr,status)
   elsif FileTest.exist?(path_rb(params['id']))
@@ -64,6 +73,14 @@ end
 
 def path_py(id)
   File.expand_path("../tmp/#{id}/main.py", __FILE__)
+end
+
+def path_java(id)
+  File.expand_path("../tmp/#{id}/Main.java", __FILE__)
+end
+
+def path_java_class(id)
+  File.expand_path("../tmp/#{id}/Main.class", __FILE__)
 end
 
 def path_rb(id)
