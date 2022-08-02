@@ -4,5 +4,3 @@ services:
     image: simodak/nekosuna:latest
     ports:
       - 8080:4567
-    volumes:
-      - ./src:/var/app
