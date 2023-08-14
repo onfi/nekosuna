@@ -11,6 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/mode-java.min.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/mode-python.min.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/mode-ruby.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/mode-rust.min.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ext-searchbox.min.js" integrity="sha256-B8qJ2ZWQDuCxnF91y5S3cJiGE5Tu1kovxLNA22PEUkg=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ext-language_tools.min.js"></script> 
     <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
@@ -106,6 +107,8 @@ int main() {
             editor.session.setMode("ace/mode/python")
         } else if (/#include/.test(editor.getValue())) {
             editor.session.setMode("ace/mode/c_cpp")
+        } else if (/fn |use std::|-\*-/.test(editor.getValue())) {
+            editor.session.setMode("ace/mode/rust")
         } else {
             document.querySelector('#mode').innerText = 'ruby'
             editor.session.setMode("ace/mode/ruby")
@@ -164,7 +167,7 @@ int main() {
                         .then(json => {
                             this.buildResult = json
                             this.compiling = false
-                            let matches = json.STDERR.match(/Main.(cpp|java):([0-9]+):/)
+                            let matches = json.STDERR.match(/ain.(cpp|java|rs):([0-9]+):/)
                             if(matches) {
                                 let markers = {}
                                 for(let i = 1; i < matches.length; i++) {

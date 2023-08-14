@@ -33,6 +33,23 @@ post '/build' do
       f.puts(params['src'])
     end
     json("","",0)
+  when /fn |use std::|-\*-/
+    `mkdir -p #{path(params['id'])}/src/`
+    File.open(path_rust(params['id']), 'w') do |f|
+      f.puts(params['src'])
+    end
+    File.open(path_rust_cargo(params['id']), 'w') do |f|
+      f.puts(<<EOS)
+[package]
+name = "main"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+EOS
+    end
+    stdout, stderr, status = Open3.capture3("cd #{path(params['id'])} && /root/.cargo/bin/cargo build --release --quiet --offline")
+    json(stdout,stderr,status)
   when /gets/
     File.open(path_rb(params['id']), 'w') do |f|
       f.puts(params['src'])
@@ -56,6 +73,9 @@ post '/exec' do
     json(stdout[0..10000],stderr,status)
   elsif FileTest.exist?(path_rb(params['id']))
     stdout, stderr, status = Open3.capture3('timeout -sKILL 5 ruby ' + path_rb(params['id']), stdin_data: params['stdin'])
+    json(stdout[0..10000],stderr,status)
+  elsif FileTest.exist?(path_rust_main(params['id']))
+    stdout, stderr, status = Open3.capture3('timeout -sKILL 5 ' + path_rust_main(params['id']), stdin_data: params['stdin'])
     json(stdout[0..10000],stderr,status)
   elsif FileTest.exist?(path_out(params['id']))
     stdout, stderr, status = Open3.capture3('timeout -sKILL 5 ' + path_out(params['id']), stdin_data: params['stdin'])
@@ -81,6 +101,18 @@ end
 
 def path_java_class(id)
   File.expand_path("../tmp/#{id}/Main.class", __FILE__)
+end
+
+def path_rust(id)
+  File.expand_path("../tmp/#{id}/src/main.rs", __FILE__)
+end
+
+def path_rust_cargo(id)
+  File.expand_path("../tmp/#{id}/Cargo.toml", __FILE__)
+end
+
+def path_rust_main(id)
+  File.expand_path("../tmp/#{id}/target/release/main", __FILE__)
 end
 
 def path_rb(id)
