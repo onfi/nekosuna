@@ -34,21 +34,12 @@ post '/build' do
     end
     json("","",0)
   when /fn |use [a-z]+::|-\*-/
-    `mkdir -p #{path(params['id'])}/src/`
+    puts "cp -r #{path_rust_template} #{path(params['id'])}"
+    `cp -r #{path_rust_template} #{path(params['id'])}`
     File.open(path_rust(params['id']), 'w') do |f|
       f.puts(params['src'])
     end
-    File.open(path_rust_cargo(params['id']), 'w') do |f|
-      f.puts(<<EOS)
-[package]
-name = "main"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-EOS
-    end
-    stdout, stderr, status = Open3.capture3("cd #{path(params['id'])} && /root/.cargo/bin/cargo build --release --quiet --offline")
+    stdout, stderr, status = Open3.capture3("cd #{path(params['id'])} && /root/.cargo/bin/cargo build --release --quiet")
     json(stdout,stderr,status)
   when /gets/
     File.open(path_rb(params['id']), 'w') do |f|
@@ -105,6 +96,10 @@ end
 
 def path_rust(id)
   File.expand_path("../tmp/#{id}/src/main.rs", __FILE__)
+end
+
+def path_rust_template
+  File.expand_path("../template/rust/*", __FILE__)
 end
 
 def path_rust_cargo(id)

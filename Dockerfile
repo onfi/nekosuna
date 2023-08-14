@@ -8,8 +8,10 @@ RUN cd && git clone https://github.com/atcoder/ac-library.git
 
 RUN pip3 install numpy
 
-RUN apt update && apt install -y curl && apt clean && rm -rf /var/lib/apt/lists/*
+RUN apt update && apt install -y curl pkg-config libssl-dev && apt clean && rm -rf /var/lib/apt/lists/*
 RUN curl -orustup.sh https://sh.rustup.rs && chmod 755 ./rustup.sh && ./rustup.sh -y && rm ./rustup.sh
+RUN /root/.cargo/bin/cargo install sccache
+ENV RUSTC_WRAPPER /root/.cargo/bin/sccache
 
 COPY src /var/app
 CMD ruby /var/app/nekosuna.rb
