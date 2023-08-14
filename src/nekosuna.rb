@@ -26,7 +26,7 @@ post '/build' do
     File.open(path_java(params['id']), 'w') do |f|
       f.puts(params['src'])
     end
-    stdout, stderr, status = Open3.capture3("javac #{path_java(params['id'])}")
+    stdout, stderr, status = Open3.capture3("javac -encoding UTF-8 #{path_java(params['id'])}")
     json(stdout,stderr,status)
   when /\Aimport|input\(\)/
     File.open(path_py(params['id']), 'w') do |f|
