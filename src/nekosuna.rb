@@ -33,7 +33,7 @@ post '/build' do
       f.puts(params['src'])
     end
     json("","",0)
-  when /fn |use std::|-\*-/
+  when /fn |use [a-z]+::|-\*-/
     `mkdir -p #{path(params['id'])}/src/`
     File.open(path_rust(params['id']), 'w') do |f|
       f.puts(params['src'])

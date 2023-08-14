@@ -107,7 +107,7 @@ int main() {
             editor.session.setMode("ace/mode/python")
         } else if (/#include/.test(editor.getValue())) {
             editor.session.setMode("ace/mode/c_cpp")
-        } else if (/fn |use std::|-\*-/.test(editor.getValue())) {
+        } else if (/fn |use [a-z]+::|-\*-/.test(editor.getValue())) {
             editor.session.setMode("ace/mode/rust")
         } else {
             document.querySelector('#mode').innerText = 'ruby'
