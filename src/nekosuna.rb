@@ -34,8 +34,7 @@ post '/build' do
     end
     json("","",0)
   when /fn |use [a-z]+::|-\*-/
-    puts "cp -r #{path_rust_template} #{path(params['id'])}"
-    `cp -r #{path_rust_template} #{path(params['id'])}`
+    `cp -r --preserve=timestamps #{path_rust_template} #{path(params['id'])}`
     File.open(path_rust(params['id']), 'w') do |f|
       f.puts(params['src'])
     end
